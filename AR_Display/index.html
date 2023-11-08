@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Website</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r120/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ar.js/2.2.2/aframe-ar.min.js"></script>
+</head>
+<body style ="margin:0; overflow:hidden">
+
+    <script type="module">
+        import { GLTFLoader } from './three.js/examples/jsm/loaders/GLTFLoader.js';
+        let camera, scene, renderer, ArToolkitContext, ArToolkitSource, ArMarkerControls;
+        
+        camera = new THREE.Camera;
+        scene = new THREE.Scene();
+        scene.add(camera)
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true});
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        ArToolkitSource = new THREEx.ArToolkitSource({
+        sourceType: "webcam",
+        })
+        ArToolkitSource.init(function(){
+            setTimeout(function(){
+                ArToolkitSource.onResizeElement();
+                ArToolkitSource.copyElementSizeTo(renderer.domElement);
+            },2000)
+        })
+        ArToolkitContext = new THREEx.ArToolkitContext({
+
+            cameraParametersUrl: 'camera_para.dat',
+            detectionMode: 'color_and_matrix'
+        });
+        ArToolkitContext.init(function(){
+            camera.projectionMatrix.copy(ArToolkitContext.getProjectionMatrix());
+        });
+        ArMarkerControls = new THREEx.ArMarkerControls(ArToolkitContext,camera,{
+            type:'pattern',
+            patternUrl:'pattern-christmas.patt',
+            changeMatrixMode:'cameraTransformMatrix'
+        });
+        scene.visible = false;
+
+        const loader = new GLTFLoader().setPath('models/shiba/');
+        loader.load('scene.gltf', function (gltf) {
+            gltf.scene.scale.set(1, 1, 1);
+            gltf.scene.rotation.x = -0.5 * Math.PI;
+            gltf.scene.position.set(0,0,0);
+            scene.add(gltf.scene);
+        });
+
+        const loader2 = new GLTFLoader().setPath('models/xmas_tree/');
+        loader2.load('scene.gltf', function (gltf) {
+            gltf.scene.scale.set(1, 1, 1);
+            gltf.scene.rotation.x = -0.5 * Math.PI;
+            gltf.scene.position.set(-1.5,0,0.8);
+            scene.add(gltf.scene);
+        });
+
+        const ambientLight = new THREE.AmbientLight(0xffffff,0.5)
+        scene.add(ambientLight)
+        const light = new THREE.PointLight()
+        scene.add(light)
+        light.castShadoe = true;
+        scene.add(light)
+
+        camera.position.z = 5;
+        function animate() {
+            requestAnimationFrame( animate );
+            ArToolkitContext.update(ArToolkitSource.domElement);
+            scene.visible = camera.visible;            
+            renderer.render(scene, camera);
+        };
+
+        animate();
+    </script>
+    
+</body>
+</html>
